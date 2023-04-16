@@ -33,12 +33,9 @@ export default class CronService {
     const tab = new Crontab(payload);
     tab.saved = false;
     const doc = await this.insert(tab);
-    if (this.isSixCron(doc)) {
-      await cronClient.addCron([
-        { id: String(doc.id), schedule: doc.schedule!, command: doc.command },
-      ]);
-    }
-    await this.set_crontab();
+    await cronClient.addCron([
+      { id: String(doc.id), schedule: doc.schedule!, command: doc.command },
+    ]);
     return doc;
   }
 
@@ -54,16 +51,13 @@ export default class CronService {
     if (this.isSixCron(doc)) {
       await cronClient.delCron([String(newDoc.id)]);
     }
-    if (this.isSixCron(newDoc)) {
-      await cronClient.addCron([
-        {
-          id: String(newDoc.id),
-          schedule: newDoc.schedule!,
-          command: newDoc.command,
-        },
-      ]);
-    }
-    await this.set_crontab();
+    await cronClient.addCron([
+      {
+        id: String(newDoc.id),
+        schedule: newDoc.schedule!,
+        command: newDoc.command,
+      },
+    ]);
     return newDoc;
   }
 
@@ -103,7 +97,6 @@ export default class CronService {
   public async remove(ids: number[]) {
     await CrontabModel.destroy({ where: { id: ids } });
     await cronClient.delCron(ids.map(String));
-    await this.set_crontab();
   }
 
   public async pin(ids: number[]) {
@@ -451,7 +444,6 @@ export default class CronService {
   public async disabled(ids: number[]) {
     await CrontabModel.update({ isDisabled: 1 }, { where: { id: ids } });
     await cronClient.delCron(ids.map(String));
-    await this.set_crontab();
   }
 
   public async enabled(ids: number[]) {
@@ -465,7 +457,6 @@ export default class CronService {
         command: doc.command,
       }));
     await cronClient.addCron(sixCron);
-    await this.set_crontab();
   }
 
   public async log(id: number) {
@@ -578,15 +569,12 @@ export default class CronService {
 
   public async autosave_crontab() {
     const tabs = await this.crontabs();
-    this.set_crontab(tabs);
 
-    const sixCron = tabs.data
-      .filter((x) => this.isSixCron(x))
-      .map((doc) => ({
-        id: String(doc.id),
-        schedule: doc.schedule!,
-        command: doc.command,
-      }));
+    const sixCron = tabs.data.map((doc) => ({
+      id: String(doc.id),
+      schedule: doc.schedule!,
+      command: doc.command,
+    }));
     await cronClient.addCron(sixCron);
   }
 }
